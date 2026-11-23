@@ -2632,7 +2632,7 @@ async function primeTorrentForStreaming(qbit, torrent, videoFile, allFiles = nul
   const seqEnabled = torrent?.seq_dl === true
   const firstLastEnabled = torrent?.f_l_piece_prio === true
   const playbackComplete = Number(torrent?.progress || 0) >= 0.999 || Number(videoFile?.progress || 0) >= 0.999
-  const shouldPrioritizeLastPieces = STREAM_PRIORITIZE_LAST_PIECES && !playbackComplete
+  const shouldPrioritizeLastPieces = !playbackComplete
   const files = Array.isArray(allFiles) ? allFiles : []
   const archiveFiles = findPackedArchiveFiles(files)
   const archiveMode = archiveFiles.length > 0 && (!videoFile?.name || isArchiveFileName(videoFile.name))
