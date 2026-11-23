@@ -1756,7 +1756,9 @@ function buildTitleFallbackQueries(contentTitle, type, season = null, episode = 
   if (type === 'movie' && year && !new RegExp(`\\b${year}\\b`).test(normalized)) {
     add(`${normalized} ${year}`)
   }
+  const seasonMarker = (type === 'series' && Number.isFinite(seasonNum)) ? `S${String(seasonNum).padStart(2, '0')}` : ''
   if (episodeMarker) add(`${normalized} ${episodeMarker}`)
+  if (seasonMarker) add(`${normalized} ${seasonMarker}`)
   add(normalized)
   if (type === 'series') {
     const words = titleWords(normalized)
@@ -2126,7 +2128,9 @@ async function handleImdbStream(config, type, id, addonUrl, configToken, playbac
         return true
       })
       console.log(`[stream] Title search returned ${titleItems.length} results after filtering (${jackettItems.length} total with ${imdbItems.length} from IMDB)`)
-      if (titleItems.length > 0 || imdbItems.length > 0) break
+      if (titleItems.length > 0 || imdbItems.length > 0) {
+        if (type !== 'series' || jackettItems.length >= supplementBelow) break
+      }
     }
   }
 
