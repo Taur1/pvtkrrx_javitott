@@ -1721,8 +1721,17 @@ function sourceRelevantForContent(item = {}, contentTitle = '', options = {}) {
   return hasMatchingImdbId(item, options.imdbId)
 }
 
+// Strip punctuation (e.g. "?") that makes nCore return nothing.
+function stripSearchPunctuation(value) {
+  return String(value || '')
+    .replace(/['\u2019`]/g, '')
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function buildTitleFallbackQueries(contentTitle, type, season = null, episode = null, contentYear = '') {
-  const normalized = normalizeSearchQuery(contentTitle)
+  const normalized = stripSearchPunctuation(contentTitle)
   const queries = []
   const seen = new Set()
   const add = (value) => {
