@@ -2035,6 +2035,14 @@ async function handleImdbStream(config, type, id, addonUrl, configToken, playbac
     recordImdbLookupOutcome(jackettItems.length)
   }
 
+  // Private trackers (nCore) only match the IMDb id on torrents that carry it,
+  // so a movie can get one IMDb hit while many more exist under the title.
+  // For movies with fewer than N IMDb hits, also run the title search and merge.
+  const imdbItems = jackettItems
+  const supplementBelow = Math.max(0, parseInt(process.env.PVTKRRX_MOVIE_TITLE_SUPPLEMENT_BELOW || '5', 10))
+  const needTitleSearch = jackettItems.length === 0 ||
+    (type === 'movie' && jackettItems.length < supplementBelow)
+
   // Build hash lookup from qBit early so completed/in-progress local torrents can
   // still surface when Prowlarr is slow, empty, or rejects categorized TV search.
   const qbitMap = new Map()
@@ -2068,7 +2076,7 @@ async function handleImdbStream(config, type, id, addonUrl, configToken, playbac
   // Most indexers here are private trackers which advertise imdb search and
   // then ignore the id (the filter above exists for exactly that), so the IMDB
   // wait almost always buys nothing and the title search runs regardless.
-  if (jackettItems.length === 0 && contentTitle) {
+  if (needTitleSearch && contentTitle) {
     const speculativeQueries = buildTitleFallbackQueries(contentTitle, type, season, episode, contentYear)
     if (speculativeQueries.length > 0) {
       speculativeQuery = speculativeQueries[0]
@@ -2084,7 +2092,7 @@ async function handleImdbStream(config, type, id, addonUrl, configToken, playbac
 
   // Fallback: title search if IMDB search returned nothing useful after filtering.
   // Use generic type=search — private trackers (HD-Torrents, SpeedCD) only support type=search.
-  if (jackettItems.length === 0 && contentTitle) {
+  if (needTitleSearch && contentTitle) {
     const fallbackQueries = buildTitleFallbackQueries(contentTitle, type, season, episode, contentYear)
     // Shared wall-clock deadline for the whole fallback chain: each searchTitleFallback
     // can run two sequential Prowlarr searches, so without a budget a few queries could
@@ -2109,9 +2117,16 @@ async function handleImdbStream(config, type, id, addonUrl, configToken, playbac
         ? await speculativeTitleSearch
         : await searchTitleFallback(torznab, fallbackQuery, cats, { type, remainingMs })
       if (reuseSpeculative) speculativeTitleSearch = null
-      jackettItems = applyFilters(fallbackItems)
-      console.log(`[stream] Title search returned ${jackettItems.length} results after filtering`)
-      if (jackettItems.length > 0) break
+      const titleItems = applyFilters(fallbackItems)
+      const mergedSeen = new Set()
+      jackettItems = [...imdbItems, ...titleItems].filter(item => {
+        const key = String(item.guid || item.infohash || item.link || item.title || '').toLowerCase()
+        if (!key || mergedSeen.has(key)) return false
+        mergedSeen.add(key)
+        return true
+      })
+      console.log(`[stream] Title search returned ${titleItems.length} results after filtering (${jackettItems.length} total with ${imdbItems.length} from IMDB)`)
+      if (titleItems.length > 0 || imdbItems.length > 0) break
     }
   }
 
