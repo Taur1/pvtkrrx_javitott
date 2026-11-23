@@ -1,4 +1,5 @@
-const SPORTS_DISCOVERY_CATALOGS = Object.freeze([
+const SPORTS_DISCOVERY_CATALOGS = Object.freeze([])
+const _DISABLED_SPORTS_CATALOGS = Object.freeze([
   {
     id: 'pvtkrrx-sports',
     name: 'All Sports',
@@ -135,6 +136,8 @@ function buildSportsCatalogExtra(detailOptions = []) {
 }
 
 function buildSportsCatalogManifestEntries() {
+  return []
+  return []
   return SPORTS_DISCOVERY_CATALOGS.map((catalog) => ({
     type: 'sports',
     id: catalog.id,

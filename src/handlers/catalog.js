@@ -1155,6 +1155,9 @@ async function handleCatalog(config, type, id, extraStr, context = {}) {
     const opts = {
       baseUrl: String(context.baseUrl || '').replace(/\/+$/, '')
     }
+    if (String(id || '').startsWith('pvtkrrx-sports')) {
+      return { metas: [] }
+    }
     const sportsCatalogDefinition = findSportsDiscoveryCatalog(id)
     if (sportsCatalogDefinition) {
       return await sportsCatalog(effectiveConfig, extra, opts, type, sportsCatalogDefinition, { baseUrl: opts.baseUrl })
